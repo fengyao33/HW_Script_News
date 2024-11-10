@@ -25,8 +25,8 @@
 <body>
     <h1>Google 新闻抓取</h1>
     <div>
-        <input type="text" id="keyword" placeholder="输入关键词" value="川普">
-        <button onclick="startScraping()">开始抓取</button>
+        <input type="text" id="keyword" placeholder="輸入關鍵字" value="川普">
+        <button onclick="startScraping()">開始抓取</button>
     </div>
 
     <div id="results"></div>
@@ -45,11 +45,11 @@
                 success: function(response) {
                     $('#results').empty();
                     if (response.error) {
-                        $('#results').html('<p>发生错误: ' + response.error + '</p>');
+                        $('#results').html('<p>發生錯誤: ' + response.error + '</p>');
                         return;
                     }
                     if (response.length === 0) {
-                        $('#results').html('<p>没有找到结果。</p>');
+                        $('#results').html('<p>沒有找到結果。</p>');
                     } else {
                         response.forEach(function(item) {
                             $('#results').append('<div class="news-item"><a href="' + item.link + '" target="_blank">' + item.title + '</a></div>');
@@ -57,7 +57,7 @@
                     }
                 },
                 error: function() {
-                    $('#results').html('<p>无法获取数据，请稍后再试。</p>');
+                    $('#results').html('<p>暫無數據。</p>');
                 }
             });
         }
