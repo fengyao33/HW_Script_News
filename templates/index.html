@@ -1,148 +1,169 @@
-    <!DOCTYPE html>
-    <html lang="zh-CN">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Google 抓新聞</title>
-        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-        <style>
-            body {
-                font-family: Arial, sans-serif;
-                margin: 20px;
-            }
-            #results {
-                margin-top: 20px;
-            }
-            .news-item {
-                margin-bottom: 10px;
-            }
-            .news-item a {
-                text-decoration: none;
-                color: #007BFF;
-            }
-        </style>
-    </head>
-    <body>
-        <button onclick="showSection(1)">1</button>
-        <button onclick="showSection(2)">2</button>
-        <h1>Google 抓新聞</h1>
-        <!-- <div>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google 抓新聞</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        #results {
+            margin-top: 20px;
+        }
+
+        .news-item {
+            margin-bottom: 10px;
+        }
+
+        .news-item a {
+            text-decoration: none;
+            color: #007BFF;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+
+<body>
+    <button onclick="showSection(1)">及時爬蟲</button>
+    <button onclick="showSection(2)">資料庫搜索</button>
+    <h1>Google 抓新聞</h1>
+    <!-- Section 1 -->
+    <div id="section1" class="content-section">
+        <h2>抓取新聞</h2>
+        <div>
             <input type="text" id="keyword" placeholder="輸入關鍵字" value="">
             <button onclick="startScraping()">開始抓取</button>
         </div>
+        <div id="results"></div>
+    </div>
 
+    <!-- Section 2 -->
+    <div id="section2" class="content-section">
         <h2>從資料庫中讀取新聞</h2>
         <div>
             <input type="text" id="dbKeyword" placeholder="輸入關鍵字來查詢">
             <button onclick="fetchFromDatabase()">查詢資料庫</button>
-        </div> -->
-
-        <!-- <div id="results"></div> -->
-        <!-- Section 1 -->
-        <div id="section1" class="content-section">
-            <h2>抓取新聞</h2>
-            <div>
-                <input type="text" id="keyword" placeholder="輸入關鍵字" value="">
-                <button onclick="startScraping()">開始抓取</button>
-            </div>
-            <div id="results"></div>
         </div>
+        <div id="results2"></div>
+    </div>
 
-        <!-- Section 2 -->
-        <div id="section2" class="content-section">
-            <h2>從資料庫中讀取新聞</h2>
-            <div>
-                <input type="text" id="dbKeyword" placeholder="輸入關鍵字來查詢">
-                <button onclick="fetchFromDatabase()">查詢資料庫</button>
-            </div>
-            <div id="results2"></div>
-        </div>
-
-        <script>
+    <script>
 
         function showSection(section) {
-            // 隐藏所有部分
             $('.content-section').hide();
-            
-            // 显示选择的部分
+
             if (section === 1) {
                 $('#section1').show();
             } else if (section === 2) {
                 $('#section2').show();
             }
         }
-            // 抓取新闻的函数
-            function startScraping() {
-                const keyword = $('#keyword').val();
-                fetchNews(keyword);
-            }
 
-            function fetchNews(keyword) {
-                $.ajax({
-                    url: '/scrape',
-                    data: { keyword: keyword },
-                    method: 'GET',
-                    success: function(response) {
-                        $('#results').empty();
-                        if (response.error) {
-                            $('#results').html('<p>發生錯誤: ' + response.error + '</p>');
-                            return;
-                        }
-                        if (response.length === 0) {
-                            $('#results').html('<p>沒有找到結果。</p>');
-                        } else {
-                            response.forEach(function(item) {
-                                $('#results').append('<div class="news-item"><a href="' + item.link + '" target="_blank">' + item.title + '</a></div>');
-                            });
-                        }
-                    },
-                    error: function() {
-                        $('#results').html('<p>暫無數據。</p>');
+        function startScraping() {
+            const keyword = $('#keyword').val();
+            fetchNews(keyword);
+        }
+
+        function fetchNews(keyword) {
+            $.ajax({
+                url: '/scrape',
+                data: { keyword: keyword },
+                method: 'GET',
+                success: function (response) {
+                    $('#results').empty();
+                    if (response.error) {
+                        $('#results').html('<p>發生錯誤: ' + response.error + '</p>');
+                        return;
                     }
-                });
-            }
+                    if (response.length === 0) {
+                        $('#results').html('<p>沒有找到結果。</p>');
+                    } else {
+                        let tableHtml = '<table class="news-table"><thead><tr><th>來源 (Domain)</th><th>標題 (Title)</th><th>內容 (Content)</th></tr></thead><tbody>';
 
-            // 从数据库获取新闻数据
-            function fetchFromDatabase() {
-                console.log(123)
-                const dbKeyword = $('#dbKeyword').val();
-                $.ajax({
-                    url: '/get_news',
-                    data: { keyword: dbKeyword },
-                    method: 'GET',
-                    success: function(response) {
-                        console.log(response.length)
-                        $('#results2').empty();
-                        if (response.length === 0) {
-                            $('#results2').html('<p>沒有找到結果。</p>');
-                        } else {
-                            response.forEach(function(item) {
-                                $('#results2').append('<div class="news-item"><a href="' + item.link + '" target="_blank">' + item.title + '</a></div>');
-                                
-                            });
-                        }
-                    },
-                    error: function() {
-                        $('#results2').html('<p>暫無數據。</p>');
+                        response.forEach(function (item) {
+                            tableHtml += '<tr>';
+                            tableHtml += '<td>' + item.domain + '</td>';
+                            tableHtml += '<td><a href="' + item.link + '" target="_blank">' + item.title + '</a></td>';
+                            tableHtml += '<td>' + item.content + '</td>';
+                            tableHtml += '</tr>';
+                        });
+                        tableHtml += '</tbody></table>';
+                        $('#results').html(tableHtml);
                     }
-                });
-            }
-
-            // 页面加载时自动开始抓取
-            $(document).ready(function() {
-                showSection(1); 
-                const initialKeyword = $('#keyword').val();
-
-                if (initialKeyword) {
-                    fetchNews(initialKeyword);
-
-                    setInterval(function() {
-                        if ($('#keyword').val()) {  
-                            fetchNews($('#keyword').val());
-                        }
-                    }, 60000);
+                },
+                error: function () {
+                    $('#results').html('<p>暫無數據。</p>');
                 }
             });
-        </script>
-    </body>
-    </html>
+        }
+
+        function fetchFromDatabase() {
+            console.log(123)
+            const dbKeyword = $('#dbKeyword').val();
+            $.ajax({
+                url: '/get_news',
+                data: { keyword: dbKeyword },
+                method: 'GET',
+                success: function (response) {
+                    console.log(response.length)
+                    $('#results2').empty();
+                    if (response.length === 0) {
+                        $('#results2').html('<p>沒有找到結果。</p>');
+                    } else {
+                        let tableHtml = '<table class="news-table"><thead><tr><th>來源 (Domain)</th><th>標題 (Title)</th><th>內容 (Content)</th></tr></thead><tbody>';
+
+                        response.forEach(function (item) {
+                            tableHtml += '<tr>';
+                            tableHtml += '<td>' + item.domain + '</td>';
+                            tableHtml += '<td><a href="' + item.link + '" target="_blank">' + item.title + '</a></td>';
+                            tableHtml += '<td>' + item.content + '</td>';
+                            tableHtml += '</tr>';
+                        });
+                        tableHtml += '</tbody></table>';
+                        $('#results2').html(tableHtml);
+                    }
+                },
+                error: function () {
+                    $('#results2').html('<p>暫無數據。</p>');
+                }
+            });
+        }
+
+        $(document).ready(function () {
+            showSection(1);
+            const initialKeyword = $('#keyword').val();
+
+            if (initialKeyword) {
+                fetchNews(initialKeyword);
+
+                setInterval(function () {
+                    if ($('#keyword').val()) {
+                        fetchNews($('#keyword').val());
+                    }
+                }, 60000);
+            }
+        });
+    </script>
+</body>
+
+</html>

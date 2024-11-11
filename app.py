@@ -9,6 +9,7 @@ import concurrent.futures
 import os
 import sqlite3
 import time
+import tldextract
 
 
 app = Flask(__name__)
@@ -52,6 +53,15 @@ def clean_url(url):
     cleaned_url = re.sub(r'&.*$', '', decoded_url)
     return cleaned_url
 
+def get_domain_name(url):
+    domain = tldextract.extract(url).domain  
+    domain_name_mapping = {
+        'tw': '[奇摩新聞]',   
+        'google': '[Google新聞]',
+        'apple': '[蘋果新聞]',
+        'cnn': '[CNN]',
+    }
+    return domain_name_mapping.get(domain, f'[{domain}新聞]')
 
 def fetch_page_data(page, keyword):
     search_url = f"https://www.google.com/search?q={keyword}&tbm=nws"
@@ -62,7 +72,7 @@ def fetch_page_data(page, keyword):
     for attempt in range(max_retries):
         try:
             response = session.get(page_url)
-            # 检查是否是 429 错误
+            # 檢查429錯誤
             if response.status_code == 429:
                 print("429 Too Many Requests...")
                 time.sleep(retry_delay)  #
@@ -94,6 +104,7 @@ def fetch_page_data(page, keyword):
                     continue
 
                 title = item.get_text(strip=True)
+                print(title)
 
                 if not title or title in seen_titles:
                     continue
@@ -102,7 +113,10 @@ def fetch_page_data(page, keyword):
                 article_url = clean_url(link)
                 article_content = fetch_article_content(article_url)
 
+                domain_name = get_domain_name(article_url)
+
                 articles.append({
+                    'domain': domain_name,
                     'title': title,
                     'link': clean_url(link),
                     'content': article_content
@@ -162,20 +176,18 @@ def fetch_article_content(url):
                             for p in paragraphs if isinstance(p, bs4.element.Tag)])
         return content
     except requests.exceptions.RequestException as e:
-        print(f"获取文章内容失败，错误信息: {e}")
+        print(f"獲取內容失敗: {e}")
         return "Failed to retrieve content"
 
 
 @app.route('/')
 def index():
-    return render_template('index.html')  # 返回SSR页面
-
+    return render_template('index.html') 
 
 @app.route('/scrape', methods=['GET'])
 def scrape():
-    keyword = request.args.get('keyword', default='台積電', type=str)  # 获取请求中的关键词
+    keyword = request.args.get('keyword', default='台積電', type=str)  
     try:
-        # 使用线程池来并行获取多个页面的数据
         with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
             results = list(executor.map(fetch_page_data, range(
                 total_pages), [keyword]*total_pages))
@@ -196,11 +208,10 @@ def scrape():
 
 @app.route('/get_news', methods=['GET'])
 def get_news():
-    keyword = request.args.get('keyword', default='', type=str)  # 获取关键词（如果有）
+    keyword = request.args.get('keyword', default='', type=str) 
     conn = sqlite3.connect('news.db')
     cursor = conn.cursor()
 
-    # 如果有关键词，查询特定关键词的新闻
     if keyword:
         cursor.execute('''SELECT title, link, keyword, fetched_at 
                           FROM news WHERE keyword LIKE ? ORDER BY fetched_at DESC''', ('%' + keyword + '%',))
@@ -211,7 +222,6 @@ def get_news():
     rows = cursor.fetchall()
     conn.close()
 
-    # 返回查询到的数据
     news_items = [{'title': row[0], 'link': row[1],
                    'keyword': row[2], 'fetched_at': row[3]} for row in rows]
 
